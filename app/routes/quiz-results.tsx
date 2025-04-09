@@ -1,6 +1,7 @@
 // FILE: app/routes/quiz-results.tsx
 import React, { useState, useCallback, useEffect } from 'react';
-import { useRouteLoaderData, Link, useNavigate } from 'react-router'; // Added useNavigate
+import { useRouteLoaderData, Link, useNavigate } from 'react-router';
+import type { MetaFunction } from 'react-router'; // Import MetaFunction
 import type { Question, QuizResults, DetailedAnswer, RadarChartDataPoint, DifficultyResult, SoloLevelResult } from '../types/quiz';
 import ResultsAnalysis from '../components/quiz/ResultsAnalysis';
 import { getAnswers, clearAnswers } from '../lib/quiz-storage';
@@ -8,6 +9,17 @@ import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
+
+// Server loader is removed
+
+// --- Meta Function ---
+export const meta: MetaFunction = () => {
+  return [
+    { title: "PPSSH Quiz Results" },
+    { name: "description", content: "Review your performance on the PPSSH NQESH reviewer quiz, including domain, strand, and detailed analysis." },
+  ];
+};
+// --- End Meta Function ---
 
 export default function QuizResultsPage() {
 
@@ -29,9 +41,10 @@ export default function QuizResultsPage() {
   };
 
   useEffect(() => {
-      // ... (calculation logic remains the same) ...
-       if (questions.length > 0) {
-          const answers = getAnswers();
+      // Calculate results on the client after mount
+      if (questions.length > 0) { // Ensure questions are loaded
+          const answers = getAnswers(); // Get answers from localStorage
+          // --- Calculation Logic ---
           const domainResults: { [key: number]: { name: string; total: number; correct: number } } = {};
           const strandResults: { [key: string]: { name: string; domainId: number; domainName: string; total: number; correct: number } } = {};
           const careerStageResults: { [key: number]: { total: number; correct: number } } = {};
@@ -83,6 +96,7 @@ export default function QuizResultsPage() {
               difficulty: q.difficultyParams.category
           }));
 
+          // Process difficulty results
           const finalDifficultyResults: DifficultyResult[] = Object.entries(difficultyResultsAcc).map(([category, data]) => ({
               category: category,
               total: data.total,
@@ -93,6 +107,7 @@ export default function QuizResultsPage() {
               return (order[a.category as keyof typeof order] || 99) - (order[b.category as keyof typeof order] || 99);
           });
 
+          // Process SOLO Level results
           const finalSoloLevelResults: SoloLevelResult[] = Object.entries(soloLevelResultsAcc).map(([level, data]) => ({
                 level: level, total: data.total, correct: data.correct,
                 percentage: (data.correct / data.total) * 100 || 0,
@@ -132,8 +147,8 @@ export default function QuizResultsPage() {
       }
   }, [questions, layoutData]);
 
-  // ... (loading and error states remain the same) ...
-    if (isLoading) {
+  // Render loading state
+  if (isLoading) {
       return (
           <div className="container mx-auto p-4 max-w-7xl space-y-8">
               <Card className="shadow-lg border-primary/20">
@@ -150,6 +165,7 @@ export default function QuizResultsPage() {
       );
   }
 
+   // Check for results being null or questions empty after loading attempt
    if (!results || questions.length === 0) {
      return (
         <div className="container mx-auto p-4 max-w-lg">
