@@ -1,15 +1,15 @@
 // FILE: app/routes/quiz-question.tsx
-import React, { useEffect, useState } from 'react'; // Added useState
-import { useRouteLoaderData, Link } from 'react-router'; // Removed useFetcher
-import type { Route } from "./+types/quiz-question";
+import React, { useEffect, useState } from 'react';
+import { useRouteLoaderData, Link, useNavigate } from 'react-router'; // Added useNavigate
+import type { Route } from "./+types/quiz-question"; // Use auto-generated type
 import type { Question } from '../types/quiz';
 import QuizCard from '../components/quiz/QuizCard';
-import { getAnswer, saveAnswer } from '../lib/quiz-storage'; // Import saveAnswer
+import { getAnswer, saveAnswer } from '../lib/quiz-storage';
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 
 // Loader remains the same...
-export async function loader({ params }: Route.LoaderArgs) {
+export async function loader({ params }: Route.LoaderArgs) { // Route.LoaderArgs is already using generated types
   if (typeof params.questionNumber !== 'string') {
      throw new Response("Invalid question number parameter", { status: 400 });
   }
@@ -29,21 +29,16 @@ export async function loader({ params }: Route.LoaderArgs) {
    };
 }
 
-// Explicitly type loaderData if auto-generation isn't working
-interface QuizQuestionLoaderData {
-    questionNumber: number;
-    totalQuestions: number;
-}
+// Removed explicit interface QuizQuestionLoaderData
 
-// Use the interface or rely on Route.ComponentProps if typegen works
-export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuestionLoaderData }) {
+// Use Route.ComponentProps which includes typed loaderData and params
+export default function QuizQuestionPage({ loaderData, params }: Route.ComponentProps) {
 
-  const { questionNumber, totalQuestions } = loaderData; // Now correctly typed
+  // loaderData and params are now correctly typed via Route.ComponentProps
+  const { questionNumber, totalQuestions } = loaderData;
 
-  // Type assertion is still okay here, assuming the route ID is correct
   const layoutData = useRouteLoaderData('routes/quiz-layout') as { questions: Question[] } | undefined;
 
-  // Better check for layoutData
   if (!layoutData?.questions) {
      return (
         <Alert variant="destructive">
@@ -54,9 +49,8 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
   }
 
   const allQuestions = layoutData.questions;
-  const currentQuestion = allQuestions[questionNumber - 1];
+  const currentQuestion = allQuestions[questionNumber - 1]; // Use questionNumber directly
 
-   // Check if currentQuestion exists after indexing
    if (!currentQuestion) {
        return (
            <div className="text-center">
@@ -71,27 +65,31 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
        );
    }
 
-  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined); // Initialize as undefined
+  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined);
+  const navigate = useNavigate(); // Added useNavigate hook
 
    useEffect(() => {
-       // Load answer from storage when component mounts or question changes
        if (currentQuestion?.id) {
            setSelectedAnswer(getAnswer(currentQuestion.id));
        }
-   }, [currentQuestion?.id]); // Depend on currentQuestion.id
+   }, [currentQuestion?.id]);
 
   const handleAnswerSelect = (questionId: number, answer: string) => {
     setSelectedAnswer(answer);
-    saveAnswer(questionId, answer); // Save directly to localStorage
+    saveAnswer(questionId, answer);
   };
 
   const nextQuestionNumber = questionNumber + 1;
   const prevQuestionNumber = questionNumber - 1;
   const isLastQuestion = questionNumber === totalQuestions;
 
+  // Optional: Could use navigate for Next/Prev for consistency, but Link is fine too
+  // const handleNext = () => navigate(`/quiz/question/${nextQuestionNumber}`);
+  // const handlePrev = () => navigate(`/quiz/question/${prevQuestionNumber}`);
+
   return (
     <QuizCard
-      key={currentQuestion.id} // Keep the key for resetting state
+      key={currentQuestion.id}
       question={currentQuestion}
       currentQuestionIndex={questionNumber - 1}
       totalQuestions={totalQuestions}

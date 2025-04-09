@@ -13,10 +13,9 @@ import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Separator } from '../../components/ui/separator';
 import DomainRadarChart from './DomainRadarChart';
-import type { Question, QuizResults, DomainResult, CareerStageResult, RadarChartDataPoint, StrandResult, SoloLevelResult, DifficultyResult } from '../../types/quiz'; // Added StrandResult, SoloLevelResult, DifficultyResult
+import type { Question, QuizResults, DomainResult, CareerStageResult, RadarChartDataPoint, StrandResult, SoloLevelResult, DifficultyResult } from '../../types/quiz';
 import { cn } from "../../lib/utils";
-import { Terminal, ChevronLeft } from "lucide-react"; // Added ChevronLeft
-
+import { Terminal, ChevronLeft } from "lucide-react";
 
 // --- Helper Functions (keep existing ones) ---
 const getDomainDescription = (domainName: string): string => {
@@ -70,6 +69,14 @@ interface ResultsAnalysisProps {
   selectedDomain: RadarChartDataPoint | null; // For Radar Chart interaction
   onDomainClick: (domain: RadarChartDataPoint | null) => void;
 }
+
+// Function to truncate text
+const truncateText = (text: string, maxLength: number = 25): string => {
+    if (text.length <= maxLength) {
+      return text;
+    }
+    return text.substring(0, maxLength) + '...';
+};
 
 const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
   results,
@@ -391,7 +398,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                     // Strand Chart
                     <div className="h-[400px] w-full mb-8">
                         <ResponsiveContainer width="100%" height="100%">
-                            <BarChart data={strandChartData} layout="vertical" margin={{ top: 5, right: 30, left: 100, bottom: 5 }}> {/* Vertical layout might be better */}
+                            <BarChart data={strandChartData} layout="vertical" margin={{ top: 5, right: 30, left: 120, bottom: 5 }}> {/* Increased left margin */}
                                 <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
                                 <XAxis
                                     type="number" domain={[0, 100]}
@@ -399,7 +406,8 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                                     tickLine={{ stroke: 'hsl(var(--border))' }} axisLine={{ stroke: 'hsl(var(--border))' }}
                                 />
                                 <YAxis
-                                    dataKey="name" type="category" width={150} // Adjust width as needed
+                                    dataKey="name" type="category" width={180} // Increased width for longer names
+                                    tickFormatter={(value) => truncateText(value, 30)} // Truncate long names
                                     tick={{ fill: 'hsl(var(--muted-foreground))', fontSize: 10 }}
                                     tickLine={{ stroke: 'hsl(var(--border))' }} axisLine={{ stroke: 'hsl(var(--border))' }}
                                 />
@@ -407,6 +415,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                                     cursor={{ fill: 'hsl(var(--accent))', fillOpacity: 0.3 }}
                                     contentStyle={{ borderRadius: 'var(--radius)', border: '1px solid hsl(var(--border))', background: 'hsl(var(--popover))', color: 'hsl(var(--popover-foreground))' }}
                                     formatter={(value: number) => [`${value.toFixed(1)}%`, "Score"]}
+                                    labelFormatter={(label) => truncateText(label, 50)} // Truncate label in tooltip too
                                 />
                                 <Legend wrapperStyle={{ paddingTop: 20 }} />
                                 <Bar
