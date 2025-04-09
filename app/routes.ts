@@ -11,10 +11,7 @@ export default [
     index("routes/quiz-index.tsx"), // Handles /quiz path
 
     // Specific Question Route (dynamic segment)
-    route("question/:questionNumber", "routes/quiz-question.tsx", [
-        // Action route for submitting an answer for a specific question
-        route("answer", "routes/quiz-answer.action.tsx")
-    ]),
+    route("question/:questionNumber", "routes/quiz-question.tsx"), // Removed nested action route
 
     // Results Route
     route("results", "routes/quiz-results.tsx"),

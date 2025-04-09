@@ -1,26 +1,23 @@
 // FILE: app/routes/quiz-question.tsx
-import React, { useEffect } from 'react';
-// Make sure useLoaderData is imported if using the hook, but we'll use props
-import { useRouteLoaderData, useParams, Link, useFetcher } from 'react-router';
+import React, { useEffect, useState } from 'react'; // Added useState
+import { useRouteLoaderData, Link } from 'react-router'; // Removed useFetcher
 import type { Route } from "./+types/quiz-question";
 import type { Question } from '../types/quiz';
 import QuizCard from '../components/quiz/QuizCard';
-import { getAnswer } from '../lib/quiz-storage'; // Removed saveAnswer, action handles it
+import { getAnswer, saveAnswer } from '../lib/quiz-storage'; // Import saveAnswer
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
-// Import json util if needed for action return type hinting
-// import { data } from 'react-router';
 
-// Loader for this specific question route
+// Loader remains the same...
 export async function loader({ params }: Route.LoaderArgs) {
-  // Ensure params.questionNumber exists before parsing
   if (typeof params.questionNumber !== 'string') {
      throw new Response("Invalid question number parameter", { status: 400 });
   }
   const questionNumber = parseInt(params.questionNumber, 10);
 
+  // Dynamically import JSON data
   const allQuestionsData = await import('../data/ppssh-quiz-questions.json');
-  const allQuestions: Question[] = allQuestionsData.default;
+  const allQuestions: Question[] = allQuestionsData.default; // Access default export
 
   if (isNaN(questionNumber) || questionNumber < 1 || questionNumber > allQuestions.length) {
     throw new Response("Question not found", { status: 404 });
@@ -39,15 +36,12 @@ interface QuizQuestionLoaderData {
 }
 
 // Use the interface or rely on Route.ComponentProps if typegen works
-// export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) { // OLD - Relies on typegen
-export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuestionLoaderData }) { // NEW - Explicit type
+export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuestionLoaderData }) {
 
-  // const params = useParams(); // params.questionNumber is available in loaderData now
   const { questionNumber, totalQuestions } = loaderData; // Now correctly typed
 
   // Type assertion is still okay here, assuming the route ID is correct
   const layoutData = useRouteLoaderData('routes/quiz-layout') as { questions: Question[] } | undefined;
-  const fetcher = useFetcher();
 
   // Better check for layoutData
   if (!layoutData?.questions) {
@@ -77,10 +71,10 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
        );
    }
 
-  const [selectedAnswer, setSelectedAnswer] = React.useState<string | undefined>(() => getAnswer(currentQuestion.id));
+  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined); // Initialize as undefined
 
    useEffect(() => {
-       // Ensure currentQuestion.id exists before accessing localStorage
+       // Load answer from storage when component mounts or question changes
        if (currentQuestion?.id) {
            setSelectedAnswer(getAnswer(currentQuestion.id));
        }
@@ -88,10 +82,7 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
 
   const handleAnswerSelect = (questionId: number, answer: string) => {
     setSelectedAnswer(answer);
-    fetcher.submit(
-        { questionId: questionId.toString(), answer: answer },
-        { method: 'post', action: `/quiz/question/${questionNumber}/answer` }
-    );
+    saveAnswer(questionId, answer); // Save directly to localStorage
   };
 
   const nextQuestionNumber = questionNumber + 1;
