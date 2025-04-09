@@ -6,7 +6,7 @@ import { useRouteLoaderData, Link, useNavigate } from 'react-router';
 import type { MetaFunction } from 'react-router'; // Import MetaFunction
 import type { Question, QuizResults, DetailedAnswer, RadarChartDataPoint, DifficultyResult, SoloLevelResult } from '../types/quiz'; // Make sure QuizResults is imported
 import ResultsAnalysis from '../components/quiz/ResultsAnalysis';
-import { getAnswers, clearAnswers } from '../lib/quiz-storage';
+import { getAnswers, clearAnswers } from '../lib/quiz-storage'; // Import clearAnswers
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
@@ -49,6 +49,7 @@ export default function QuizResultsPage() {
   }, []);
 
   const handleResetQuiz = () => {
+    // Clear answers explicitly here too, in case the user resets before the effect runs or if the effect failed.
     clearAnswers();
     navigate('/quiz/question/1', { replace: true }); // Use navigate instead of window.location
   };
@@ -57,6 +58,22 @@ export default function QuizResultsPage() {
       // Calculate results on the client after mount
       if (questions.length > 0) { // Ensure questions are loaded
           const answers = getAnswers(); // Get answers from localStorage
+
+          // --- Prevent rendering results if not all questions are answered ---
+          // We check this here to handle cases where the user might manually navigate
+          // This doesn't prevent the navigation itself, but prevents showing incomplete results.
+          // The navigation prevention will be handled on the question page.
+          const answeredCount = Object.keys(answers).length;
+          if (answeredCount < questions.length) {
+              console.warn("Attempted to load results page with incomplete answers.");
+              // Optionally, redirect back to the last question or show an error.
+              // For now, we'll prevent calculation and show the error state later.
+              setIsLoading(false); // Stop loading to trigger error display below
+              return; // Exit useEffect early
+          }
+          // --- End incomplete answers check ---
+
+
           // --- Calculation Logic ---
           const domainResults: { [key: number]: { name: string; total: number; correct: number } } = {};
           const strandResults: { [key: string]: { name: string; domainId: number; domainName: string; total: number; correct: number } } = {};
@@ -184,15 +201,22 @@ export default function QuizResultsPage() {
 
           setResults(finalResults);
           setIsLoading(false);
+
+          // --- Clear local storage after results are calculated and set ---
+          clearAnswers();
+          console.log("Quiz answers cleared from local storage.");
+          // --- End clearing local storage ---
+
       } else if (layoutData === undefined) {
           // Still waiting for layout data to load questions
           setIsLoading(true);
       } else {
-          // layoutData is loaded, but questions array is empty
-          console.error("Questions data is empty or failed to load.");
+          // layoutData is loaded, but questions array is empty or incomplete answers detected earlier
+          console.error("Questions data is empty, failed to load, or not all questions were answered.");
           setIsLoading(false); // Stop loading, will show error state
       }
-  }, [questions, layoutData]); // Dependencies
+  }, [questions, layoutData]); // Dependencies // Removed navigate from dependencies as it's stable
+
 
   // --- Loading State ---
   if (isLoading) {
@@ -216,18 +240,20 @@ export default function QuizResultsPage() {
 
    // --- Error State ---
    // Check for results being null or questions empty after loading attempt
+   // Also handles the case where useEffect exited early due to incomplete answers
    if (!results || questions.length === 0) {
      return (
         <div className="container mx-auto p-4 max-w-lg mt-10">
             <Alert variant="destructive">
                 <AlertTitle>Error Calculating Results</AlertTitle>
                 <AlertDescription>
-                    Could not calculate quiz results. This might happen if no answers were recorded or if the quiz data failed to load correctly.
+                    Could not calculate quiz results. This might happen if the quiz data failed to load correctly, or if not all questions were answered before attempting to view results.
                     Please try taking the quiz again.
                 </AlertDescription>
                 <div className="mt-4">
+                    {/* Use Link component for client-side navigation */}
                     <Link to="/quiz/question/1">
-                        <Button variant="destructive">Restart Quiz</Button>
+                        <Button variant="destructive" onClick={clearAnswers}>Restart Quiz</Button> {/* Ensure storage is cleared on manual restart too */}
                     </Link>
                 </div>
             </Alert>
@@ -241,7 +267,7 @@ export default function QuizResultsPage() {
     <ResultsAnalysis
       results={results}
       questions={questions}
-      onResetQuiz={handleResetQuiz}
+      onResetQuiz={handleResetQuiz} // Pass the corrected reset handler
       selectedDomain={selectedDomain}
       onDomainClick={handleDomainClick}
     />

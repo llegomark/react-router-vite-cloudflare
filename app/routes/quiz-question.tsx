@@ -1,13 +1,14 @@
 // FILE: app/routes/quiz-question.tsx
-import React, { useEffect, useState } from 'react';
-import { useRouteLoaderData, Link, useNavigate } from 'react-router';
+import React, { useEffect, useState, useCallback } from 'react';
+import { useRouteLoaderData, useNavigate } from 'react-router';
 import type { MetaFunction } from 'react-router';
 import type { Route } from "./+types/quiz-question";
 import type { Question } from '../types/quiz';
 import QuizCard from '../components/quiz/QuizCard';
-import { getAnswer, saveAnswer } from '../lib/quiz-storage';
+import { getAnswer, saveAnswer, getAnswers } from '../lib/quiz-storage';
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
+import { toast } from "sonner";
 
 // Define the expected shape of the loader data explicitly
 type QuestionLoaderData = {
@@ -16,12 +17,14 @@ type QuestionLoaderData = {
 };
 
 // Loader function (no changes needed here)
-export async function loader({ params }: Route.LoaderArgs): Promise<QuestionLoaderData> { // Explicit return type
+export async function loader({ params }: Route.LoaderArgs): Promise<QuestionLoaderData> {
   if (typeof params.questionNumber !== 'string') {
      throw new Response("Invalid question number parameter", { status: 400 });
   }
   const questionNumber = parseInt(params.questionNumber, 10);
 
+  // TODO: Ideally, fetch only the required question, not all of them here.
+  // For now, we keep loading all as the layout depends on it.
   const allQuestionsData = await import('../data/ppssh-quiz-questions.json');
   const allQuestions: Question[] = allQuestionsData.default;
 
@@ -36,27 +39,18 @@ export async function loader({ params }: Route.LoaderArgs): Promise<QuestionLoad
 }
 
 // --- Meta Function ---
-// Note: We remove <typeof loader> here as we'll get data from matches
 export const meta: MetaFunction = ({ matches }) => {
-    // Find the match for the current route itself
-    // The last match in the array is typically the deepest/current one
     const currentRouteMatch = matches[matches.length - 1];
-    // Get the loader data from this route's match, asserting its type
     const loaderData = currentRouteMatch?.data as QuestionLoaderData | undefined;
 
-    // Check if the loader data exists and has the expected properties
     if (!loaderData || typeof loaderData.questionNumber !== 'number' || typeof loaderData.totalQuestions !== 'number') {
-        // Return default meta if data is missing or invalid
         return [
             { title: "PPSSH Quiz Question" },
             { name: "description", content: "Answer PPSSH NQESH reviewer questions." },
         ];
     }
 
-    // --- Data is valid, access properties directly ---
     const { questionNumber, totalQuestions } = loaderData;
-
-    // Access parent loader data for additional context
     const parentMatch = matches.find(m => m.id === 'routes/quiz-layout');
     const questions = (parentMatch?.data as { questions: Question[] } | undefined)?.questions;
     const currentQuestion = questions?.[questionNumber - 1];
@@ -70,74 +64,104 @@ export const meta: MetaFunction = ({ matches }) => {
 // --- End Meta Function ---
 
 
-// Component remains the same...
-export default function QuizQuestionPage({ loaderData, params }: Route.ComponentProps) {
+export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) { // Removed params as it's in loaderData
   const { questionNumber, totalQuestions } = loaderData;
   const layoutData = useRouteLoaderData('routes/quiz-layout') as { questions: Question[] } | undefined;
+  const navigate = useNavigate();
 
-  if (!layoutData?.questions) {
+  // --- State --- 
+  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined);
+
+  // --- Derived Data --- 
+  const allQuestions = layoutData?.questions;
+  const currentQuestion = allQuestions?.[questionNumber - 1];
+  const nextQuestionNumber = questionNumber + 1;
+  const prevQuestionNumber = questionNumber - 1;
+  const isLastQuestion = questionNumber === totalQuestions;
+  const canGoPrev = prevQuestionNumber > 0;
+  // Enable next/finish only if an answer is selected for the *current* question
+  const canGoNext = !!selectedAnswer; 
+
+  // --- Effects --- 
+  useEffect(() => {
+    // Load saved answer for the current question when the question changes
+    if (currentQuestion?.id) {
+      setSelectedAnswer(getAnswer(currentQuestion.id));
+    } else {
+      setSelectedAnswer(undefined); // Reset if question ID is somehow missing
+    }
+  }, [currentQuestion?.id]); // Depend only on the question ID
+
+  // --- Callbacks --- 
+  const handleAnswerSelect = useCallback((questionId: number, answer: string) => {
+    setSelectedAnswer(answer);
+    saveAnswer(questionId, answer);
+  }, []); // No dependencies needed as saveAnswer is stable
+
+  const handleNextClick = useCallback(() => {
+    if (!canGoNext) return; // Should not happen if button is disabled, but safety check
+
+    if (isLastQuestion) {
+        // Check if all questions are answered before finishing
+        const answers = getAnswers();
+        const answeredCount = Object.keys(answers).length;
+
+        if (answeredCount === totalQuestions) {
+            navigate('/quiz/results');
+        } else {
+            // Use sonner toast for notification
+            toast.warning("Incomplete Quiz", {
+                description: `Please answer all ${totalQuestions} questions before finishing. You have answered ${answeredCount}.`,
+            });
+        }
+    } else {
+        navigate(`/quiz/question/${nextQuestionNumber}`);
+    }
+  }, [navigate, isLastQuestion, nextQuestionNumber, totalQuestions, canGoNext]);
+
+  const handlePrevClick = useCallback(() => {
+    if (!canGoPrev) return; // Safety check
+    navigate(`/quiz/question/${prevQuestionNumber}`);
+  }, [navigate, prevQuestionNumber, canGoPrev]);
+
+  // --- Render Logic --- 
+  if (!allQuestions) {
      return (
         <Alert variant="destructive">
             <AlertTitle>Error</AlertTitle>
-            <AlertDescription>Could not load quiz layout data.</AlertDescription>
+            <AlertDescription>Could not load quiz questions data.</AlertDescription>
         </Alert>
      );
   }
 
-  const allQuestions = layoutData.questions;
-  const currentQuestion = allQuestions[questionNumber - 1];
-
-   if (!currentQuestion) {
+  if (!currentQuestion) {
        return (
            <div className="text-center">
                <Alert variant="destructive">
                    <AlertTitle>Error</AlertTitle>
-                   <AlertDescription>Invalid question data retrieved.</AlertDescription>
+                   <AlertDescription>Invalid question data for question number {questionNumber}.</AlertDescription>
                </Alert>
-               <Link to="/quiz/question/1" className="mt-4 inline-block">
-                   <Button variant="link">Go to First Question</Button>
-               </Link>
+               {/* Provide a way back if something goes wrong */}
+               <Button variant="link" onClick={() => navigate('/quiz/question/1', { replace: true })} className="mt-4">
+                   Go to First Question
+               </Button>
            </div>
        );
    }
 
-  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined);
-  const navigate = useNavigate();
-
-   useEffect(() => {
-       if (currentQuestion?.id) {
-           setSelectedAnswer(getAnswer(currentQuestion.id));
-       } else {
-           setSelectedAnswer(undefined);
-       }
-   }, [currentQuestion?.id]);
-
-  const handleAnswerSelect = (questionId: number, answer: string) => {
-    setSelectedAnswer(answer);
-    saveAnswer(questionId, answer);
-  };
-
-  const nextQuestionNumber = questionNumber + 1;
-  const prevQuestionNumber = questionNumber - 1;
-  const isLastQuestion = questionNumber === totalQuestions;
-
   return (
     <QuizCard
-      key={currentQuestion.id} // Force remount when question ID changes
+      key={currentQuestion.id} // Force remount/update if needed
       question={currentQuestion}
       currentQuestionIndex={questionNumber - 1}
       totalQuestions={totalQuestions}
       selectedAnswer={selectedAnswer}
       onAnswer={handleAnswerSelect}
       isLastQuestion={isLastQuestion}
-      NextLinkComponent={isLastQuestion
-          ? <Link to="/quiz/results"><Button disabled={!selectedAnswer}>Finish Quiz</Button></Link>
-          : <Link to={`/quiz/question/${nextQuestionNumber}`}><Button disabled={!selectedAnswer}>Next Question</Button></Link>
-      }
-      PrevLinkComponent={prevQuestionNumber > 0
-          ? <Link to={`/quiz/question/${prevQuestionNumber}`}><Button variant="outline">Previous</Button></Link>
-          : <Button variant="outline" disabled>Previous</Button>
-      }
+      onNextClick={handleNextClick} // Use callback
+      onPrevClick={handlePrevClick} // Use callback
+      canGoNext={canGoNext}         // Pass disabled state logic
+      canGoPrev={canGoPrev}         // Pass disabled state logic
     />
   );
 }
