@@ -1,5 +1,5 @@
 // FILE: app/components/quiz/ResultsAnalysis.tsx
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import {
   Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle
 } from '../../components/ui/card';
@@ -13,11 +13,12 @@ import { Badge } from '../../components/ui/badge';
 import { Alert, AlertDescription, AlertTitle } from '../../components/ui/alert';
 import { Separator } from '../../components/ui/separator';
 import DomainRadarChart from './DomainRadarChart';
-import type { Question, QuizResults, DomainResult, CareerStageResult, RadarChartDataPoint, StrandResult, SoloLevelResult, DifficultyResult } from '../../types/quiz';
+import EligibilityAnalysisCard from './EligibilityAnalysisCard'; // Import the eligibility card
+import type { Question, QuizResults, DomainResult, CareerStageResult, RadarChartDataPoint, StrandResult, SoloLevelResult, DifficultyResult } from '../../types/quiz'; // Make sure QuizResults is imported
 import { cn } from "../../lib/utils";
-import { Terminal, ChevronLeft } from "lucide-react";
+import { Terminal, ChevronLeft, Target, CheckCircle, AlertTriangle, XCircle, Info } from "lucide-react"; // Added more icons
 
-// --- Helper Functions (keep existing ones) ---
+// --- Helper Functions ---
 const getDomainDescription = (domainName: string): string => {
   const descriptions: { [key: string]: string } = {
     "Leading Strategically": "Demonstrates capability in setting direction, establishing goals, and ensuring strategic alignment. Leadership in vision development is effective.",
@@ -63,10 +64,10 @@ const getDomainStrengthCategory = (percentage: number): { label: string; color: 
 // --- End Helper Functions ---
 
 interface ResultsAnalysisProps {
-  results: QuizResults;
+  results: QuizResults; // Ensure results includes the new fields
   questions: Question[];
   onResetQuiz: () => void;
-  selectedDomain: RadarChartDataPoint | null; // For Radar Chart interaction
+  selectedDomain: RadarChartDataPoint | null;
   onDomainClick: (domain: RadarChartDataPoint | null) => void;
 }
 
@@ -78,12 +79,13 @@ const truncateText = (text: string, maxLength: number = 25): string => {
     return text.substring(0, maxLength) + '...';
 };
 
+
 const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
   results,
   questions,
   onResetQuiz,
-  selectedDomain, // This is for the radar chart interaction state, managed by the parent
-  onDomainClick,  // This is the handler to update the radar chart state in the parent
+  selectedDomain,
+  onDomainClick,
 }) => {
     // State specifically for showing strand breakdown within the Domains tab
     const [selectedDomainForStrands, setSelectedDomainForStrands] = useState<DomainResult | null>(null);
@@ -124,7 +126,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
     }));
 
     const radarChartData: RadarChartDataPoint[] = results.domainResults.map(domain => ({
-        subject: domain.name.replace(" and ", " & "),
+        subject: domain.name.replace(" and ", " & "), // Consistent naming for radar
         A: parseFloat(domain.percentage.toFixed(1)),
         fullMark: 100
     }));
@@ -215,13 +217,14 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
       {/* --- Tabs --- */}
       <Tabs defaultValue="overview">
         {/* Updated Tabs List */}
-        <TabsList className="grid w-full grid-cols-6 mb-6"> {/* Changed grid-cols-4 to grid-cols-6 */}
+        <TabsList className="grid w-full grid-cols-7 mb-6"> {/* Changed grid-cols-6 to grid-cols-7 */}
           <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="domains">Domains & Strands</TabsTrigger> {/* Updated Label */}
+          <TabsTrigger value="domains">Domains & Strands</TabsTrigger>
           <TabsTrigger value="career-stages">Career Stages</TabsTrigger>
-          <TabsTrigger value="solo">SOLO Levels</TabsTrigger> {/* New Tab */}
-          <TabsTrigger value="difficulty">Difficulty</TabsTrigger> {/* New Tab */}
+          <TabsTrigger value="solo">SOLO Levels</TabsTrigger>
+          <TabsTrigger value="difficulty">Difficulty</TabsTrigger>
           <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
+          <TabsTrigger value="eligibility">Eligibility Estimate</TabsTrigger> {/* New Trigger */}
         </TabsList>
 
         {/* --- Overview Tab --- */}
@@ -241,7 +244,9 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                     <h3 className="text-lg font-semibold mb-2 text-center lg:text-left">Domain Strengths</h3>
                      {results.domainResults.map((domain, index) => {
                        const strength = getDomainStrengthCategory(domain.percentage);
-                       const correspondingRadarPoint = radarChartData.find(rp => rp.subject === domain.name.replace(" and ", " & "));
+                       // Find the corresponding radar point based on name (handle '&' vs 'and')
+                       const radarSubjectName = domain.name.replace(" and ", " & ");
+                       const correspondingRadarPoint = radarChartData.find(rp => rp.subject === radarSubjectName);
                        const isSelected = selectedDomain?.subject === correspondingRadarPoint?.subject;
 
                        return (
@@ -534,7 +539,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
             </Card>
         </TabsContent>
 
-        {/* --- NEW: SOLO Levels Tab --- */}
+        {/* --- SOLO Levels Tab --- */}
         <TabsContent value="solo">
             <Card>
               <CardHeader>
@@ -580,7 +585,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
             </Card>
         </TabsContent>
 
-        {/* --- NEW: Difficulty Tab --- */}
+        {/* --- Difficulty Tab --- */}
         <TabsContent value="difficulty">
             <Card>
               <CardHeader>
@@ -655,11 +660,11 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
                                         <>
                                         <p>
                                             <span className="font-medium text-muted-foreground">Your answer:</span> {answer.userAnswer || <span className="italic text-muted-foreground">Not answered</span>}
-                                            {userAnswerText && ` (${userAnswerText})`}
+                                            {userAnswerText && ` (${truncateText(userAnswerText, 50)})`}
                                         </p>
                                         <p>
                                             <span className="font-medium text-muted-foreground">Correct answer:</span> {answer.correctAnswer}
-                                            {correctAnswerText && ` (${correctAnswerText})`}
+                                            {correctAnswerText && ` (${truncateText(correctAnswerText, 50)})`}
                                         </p>
                                         </>
                                     );
@@ -702,6 +707,15 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
               </CardContent>
             </Card>
         </TabsContent>
+
+         {/* --- NEW: Eligibility Estimate Tab --- */}
+        <TabsContent value="eligibility">
+           <EligibilityAnalysisCard
+             score={results.estimatedAbilityScore}
+             category={results.eligibilityCategory}
+           />
+        </TabsContent>
+        {/* --- End Eligibility Estimate Tab --- */}
 
       </Tabs>
 
