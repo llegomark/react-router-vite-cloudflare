@@ -1,0 +1,200 @@
+[
+    {
+      "id": 1,
+      "text": "A school head who collaboratively develops and implements a vision and mission aligned with national, regional, and division educational goals is primarily demonstrating which competency?",
+      "options": [
+        { "value": "a", "text": "Technical proficiency in curriculum development" },
+        { "value": "b", "text": "Strategic coordination with external stakeholders" },
+        { "value": "c", "text": "Leadership in vision and mission development" },
+        { "value": "d", "text": "Operational management of school resources" }
+      ],
+      "correctAnswer": "c",
+      "domain": {
+        "id": 1,
+        "name": "Leading Strategically"
+      },
+      "strand": {
+        "id": "1.1",
+        "name": "Vision, mission and core values"
+      },
+      "indicator": {
+        "id": "1.1.2",
+        "text": "Communicate the DepEd vision, mission and core values to the wider school community to ensure shared understanding and alignment of school policies, programs, projects and activities."
+      },
+      "careerStage": 2,
+      "soloLevel": "Relational",
+      "difficultyParams": {
+        "value": 0.3,
+        "category": "Easy",
+        "discrimination": 1.2,
+        "guessing": 0.25
+      },
+      "explanation": "The correct answer directly aligns with PPSSH Domain 1: Leading Strategically, specifically Strand 1.1 which focuses on vision, mission and core values. Career Stage 2 school heads are expected to communicate these elements to ensure shared understanding and alignment of school policies and programs.",
+      "contentTags": ["vision", "mission", "leadership", "collaboration", "communication"]
+    },
+    {
+      "id": 2,
+      "text": "Which of the following best characterizes the role of a school head in promoting a culture of excellence according to the PPSSH?",
+      "options": [
+        { "value": "a", "text": "Setting strict performance targets for all teachers" },
+        { "value": "b", "text": "Creating systems and procedures that reward academic achievement only" },
+        { "value": "c", "text": "Establishing an environment that values diversity, collaboration, and continuous improvement" },
+        { "value": "d", "text": "Focusing primarily on compliance with DepEd regulations" }
+      ],
+      "correctAnswer": "c",
+      "domain": {
+        "id": 1,
+        "name": "Leading Strategically"
+      },
+      "strand": {
+        "id": "1.2",
+        "name": "School planning and implementation"
+      },
+      "indicator": {
+        "id": "1.2.3",
+        "text": "Engage the school community in the development and implementation of school plans aligned with institutional goals and policies."
+      },
+      "careerStage": 3,
+      "soloLevel": "Multistructural",
+      "difficultyParams": {
+        "value": 0.8,
+        "category": "Difficult",
+        "discrimination": 1.5,
+        "guessing": 0.25
+      },
+      "explanation": "The correct answer reflects the PPSSH emphasis on creating a collaborative and inclusive environment that fosters continuous improvement, which is a key aspect of leading strategically.",
+      "contentTags": ["school culture", "diversity", "collaboration", "continuous improvement"]
+    },
+    {
+      "id": 3,
+      "text": "When managing school finances, what is the most important consideration according to PPSSH standards?",
+      "options": [
+        { "value": "a", "text": "Minimizing costs across all budget categories" },
+        { "value": "b", "text": "Alignment with the school plan and adherence to financial policies" },
+        { "value": "c", "text": "Generating additional income for the school" },
+        { "value": "d", "text": "Delegating all financial decisions to the accounting department" }
+      ],
+      "correctAnswer": "b",
+      "domain": {
+        "id": 2,
+        "name": "Managing School Operations and Resources"
+      },
+      "strand": {
+        "id": "2.2",
+        "name": "Financial management"
+      },
+      "indicator": {
+        "id": "2.2.2",
+        "text": "Manage finances adhering to policies, guidelines and issuances in allocation, procurement, disbursement and liquidation aligned with the school plan."
+      },
+      "careerStage": 2,
+      "soloLevel": "Relational",
+      "difficultyParams": {
+        "value": 0.5,
+        "category": "Medium",
+        "discrimination": 1.3,
+        "guessing": 0.25
+      },
+      "explanation": "PPSSH emphasizes that financial management must adhere to policies and guidelines while aligning with the school plan, rather than simply minimizing costs or delegating responsibility.",
+      "contentTags": ["financial management", "school planning", "policy adherence", "resource allocation"]
+    },
+    {
+      "id": 4,
+      "text": "According to PPSSH, what is the most effective approach for a school head to support teacher development?",
+      "options": [
+        { "value": "a", "text": "Conducting annual performance evaluations" },
+        { "value": "b", "text": "Implementing standardized professional development programs for all teachers" },
+        { "value": "c", "text": "Providing personalized coaching and feedback based on observed teaching practices" },
+        { "value": "d", "text": "Requiring teachers to complete advanced degree programs" }
+      ],
+      "correctAnswer": "c",
+      "domain": {
+        "id": 3,
+        "name": "Focusing on Teaching and Learning"
+      },
+      "strand": {
+        "id": "3.2",
+        "name": "Teaching standards and pedagogies"
+      },
+      "indicator": {
+        "id": "3.2.2",
+        "text": "Provide technical assistance to teachers on teaching standards and pedagogies within and across learning areas to improve their teaching practice."
+      },
+      "careerStage": 2,
+      "soloLevel": "Relational",
+      "difficultyParams": {
+        "value": 0.4,
+        "category": "Medium",
+        "discrimination": 1.4,
+        "guessing": 0.25
+      },
+      "explanation": "The PPSSH emphasizes personalized support through coaching and feedback as the most effective way for school heads to assist teachers in improving their teaching practices.",
+      "contentTags": ["teacher development", "coaching", "feedback", "teaching practice", "technical assistance"]
+    },
+    {
+      "id": 5,
+      "text": "How should a school head primarily approach professional networking according to PPSSH?",
+      "options": [
+        { "value": "a", "text": "Focus on building relationships with higher authorities only" },
+        { "value": "b", "text": "Participate actively in professional networks to enhance knowledge and practice" },
+        { "value": "c", "text": "Limit networking to formal educational conferences" },
+        { "value": "d", "text": "Delegate networking responsibilities to assistant principals" }
+      ],
+      "correctAnswer": "b",
+      "domain": {
+        "id": 4,
+        "name": "Developing Self and Others"
+      },
+      "strand": {
+        "id": "4.3",
+        "name": "Professional networks"
+      },
+      "indicator": {
+        "id": "4.3.2",
+        "text": "Participate in professional networks to upgrade knowledge and skills and to enhance practice."
+      },
+      "careerStage": 2,
+      "soloLevel": "Multistructural",
+      "difficultyParams": {
+        "value": 0.3,
+        "category": "Easy",
+        "discrimination": 1.2,
+        "guessing": 0.25
+      },
+      "explanation": "The PPSSH emphasizes active participation in professional networks as a means for school heads to enhance their knowledge, skills, and practice.",
+      "contentTags": ["professional networks", "knowledge enhancement", "professional development", "leadership skills"]
+    },
+    {
+      "id": 6,
+      "text": "According to PPSSH, what approach should a school head take when engaging with diverse community stakeholders?",
+      "options": [
+        { "value": "a", "text": "Maintain formal, arm's-length relationships to preserve school autonomy" },
+        { "value": "b", "text": "Focus primarily on relationships that provide financial benefits to the school" },
+        { "value": "c", "text": "Build constructive relationships that foster an enabling environment for learners" },
+        { "value": "d", "text": "Delegate community engagement entirely to designated staff members" }
+      ],
+      "correctAnswer": "c",
+      "domain": {
+        "id": 5,
+        "name": "Building Connections"
+      },
+      "strand": {
+        "id": "5.1",
+        "name": "Management of diverse relationships"
+      },
+      "indicator": {
+        "id": "5.1.2",
+        "text": "Build constructive relationships with authorities, colleagues, parents and other stakeholders to foster an enabling and supportive environment for learners."
+      },
+      "careerStage": 2,
+      "soloLevel": "Relational",
+      "difficultyParams": {
+        "value": 0.4,
+        "category": "Medium",
+        "discrimination": 1.3,
+        "guessing": 0.25
+      },
+      "explanation": "The PPSSH prioritizes building constructive relationships with diverse stakeholders to create an enabling and supportive environment focused on learner needs.",
+      "contentTags": ["community engagement", "stakeholder relationships", "supportive environment", "collaboration"]
+    }
+  ]
