@@ -1,16 +1,16 @@
+// --- START OF FILE app/routes/quiz-results.tsx ---
+
 // FILE: app/routes/quiz-results.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouteLoaderData, Link, useNavigate } from 'react-router';
 import type { MetaFunction } from 'react-router'; // Import MetaFunction
-import type { Question, QuizResults, DetailedAnswer, RadarChartDataPoint, DifficultyResult, SoloLevelResult } from '../types/quiz';
+import type { Question, QuizResults, DetailedAnswer, RadarChartDataPoint, DifficultyResult, SoloLevelResult } from '../types/quiz'; // Make sure QuizResults is imported
 import ResultsAnalysis from '../components/quiz/ResultsAnalysis';
 import { getAnswers, clearAnswers } from '../lib/quiz-storage';
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
-
-// Server loader is removed
 
 // --- Meta Function ---
 export const meta: MetaFunction = () => {
@@ -20,6 +20,19 @@ export const meta: MetaFunction = () => {
   ];
 };
 // --- End Meta Function ---
+
+// --- Helper Function for Difficulty Points ---
+const getDifficultyPoints = (category?: string): number => {
+  switch (category?.toLowerCase()) {
+    case 'easy': return 1;
+    case 'medium': return 2;
+    case 'difficult': return 3;
+    // Add 'very difficult' if you use it, e.g., return 4;
+    default: return 1; // Default points for unknown/missing category
+  }
+};
+// --- End Helper Function ---
+
 
 export default function QuizResultsPage() {
 
@@ -50,12 +63,23 @@ export default function QuizResultsPage() {
           const careerStageResults: { [key: number]: { total: number; correct: number } } = {};
           const soloLevelResultsAcc: { [key: string]: { total: number; correct: number } } = {};
           const difficultyResultsAcc: { [key: string]: { total: number; correct: number } } = {};
+
           let correctCount = 0;
+          let userWeightedScore = 0;
+          let totalPossibleWeightedScore = 0;
 
           questions.forEach(question => {
               const userAnswer = answers[question.id];
               const isCorrect = userAnswer === question.correctAnswer;
               if (isCorrect) correctCount++;
+
+              // --- Calculate Weighted Score ---
+              const difficultyPoints = getDifficultyPoints(question.difficultyParams.category);
+              totalPossibleWeightedScore += difficultyPoints;
+              if (isCorrect) {
+                userWeightedScore += difficultyPoints;
+              }
+              // --- End Weighted Score Calc ---
 
               // Domain
               const domainId = question.domain.id;
@@ -116,6 +140,23 @@ export default function QuizResultsPage() {
                 return (order[a.level as keyof typeof order] || 99) - (order[b.level as keyof typeof order] || 99);
             });
 
+          // --- Calculate Final Estimated Ability and Category ---
+          const estimatedAbilityScore = totalPossibleWeightedScore > 0 ? (userWeightedScore / totalPossibleWeightedScore) * 100 : 0;
+
+          // Define thresholds (Adjust these based on desired strictness/distribution)
+          const THRESHOLD_A = 85.0; // Score >= 85% for Category A
+          const THRESHOLD_B = 70.0; // Score >= 70% and < 85% for Category B
+
+          let eligibilityCategory: 'A' | 'B' | 'C';
+          if (estimatedAbilityScore >= THRESHOLD_A) {
+            eligibilityCategory = 'A';
+          } else if (estimatedAbilityScore >= THRESHOLD_B) {
+            eligibilityCategory = 'B';
+          } else {
+            eligibilityCategory = 'C';
+          }
+          // --- End Ability/Category Calculation ---
+
 
           const finalResults: QuizResults = {
               totalQuestions: questions.length, correctAnswers: correctCount,
@@ -132,22 +173,28 @@ export default function QuizResultsPage() {
                   stage: Number(stage), total: data.total, correct: data.correct,
                   percentage: (data.correct / data.total) * 100 || 0,
               })).sort((a, b) => a.stage - b.stage),
-              soloLevelResults: finalSoloLevelResults,
-              difficultyResults: finalDifficultyResults,
+              soloLevelResults: finalSoloLevelResults, // Use the calculated finalSoloLevelResults
+              difficultyResults: finalDifficultyResults, // Use the calculated finalDifficultyResults
               detailedAnswers: detailedAnswers,
+              // --- Add new fields ---
+              estimatedAbilityScore: estimatedAbilityScore,
+              eligibilityCategory: eligibilityCategory,
+              // --- End new fields ---
           };
 
           setResults(finalResults);
           setIsLoading(false);
       } else if (layoutData === undefined) {
+          // Still waiting for layout data to load questions
           setIsLoading(true);
       } else {
-          console.error("Questions data is empty.");
-          setIsLoading(false);
+          // layoutData is loaded, but questions array is empty
+          console.error("Questions data is empty or failed to load.");
+          setIsLoading(false); // Stop loading, will show error state
       }
-  }, [questions, layoutData]);
+  }, [questions, layoutData]); // Dependencies
 
-  // Render loading state
+  // --- Loading State ---
   if (isLoading) {
       return (
           <div className="container mx-auto p-4 max-w-7xl space-y-8">
@@ -161,18 +208,21 @@ export default function QuizResultsPage() {
                       <Skeleton className="h-40 w-full mt-6" />
                   </CardContent>
               </Card>
+              {/* Add skeletons for other potential sections if desired */}
           </div>
       );
   }
+  // --- End Loading State ---
 
+   // --- Error State ---
    // Check for results being null or questions empty after loading attempt
    if (!results || questions.length === 0) {
      return (
-        <div className="container mx-auto p-4 max-w-lg">
+        <div className="container mx-auto p-4 max-w-lg mt-10">
             <Alert variant="destructive">
                 <AlertTitle>Error Calculating Results</AlertTitle>
                 <AlertDescription>
-                    Could not calculate quiz results. This might happen if no answers were recorded.
+                    Could not calculate quiz results. This might happen if no answers were recorded or if the quiz data failed to load correctly.
                     Please try taking the quiz again.
                 </AlertDescription>
                 <div className="mt-4">
@@ -184,7 +234,9 @@ export default function QuizResultsPage() {
         </div>
      );
    }
+   // --- End Error State ---
 
+  // Render the analysis component with the full results object
   return (
     <ResultsAnalysis
       results={results}
@@ -195,3 +247,4 @@ export default function QuizResultsPage() {
     />
   );
 }
+// --- END OF FILE app/routes/quiz-results.tsx ---

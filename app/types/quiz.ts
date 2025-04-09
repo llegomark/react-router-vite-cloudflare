@@ -89,8 +89,12 @@ export interface QuizResults {
   strandResults: StrandResult[];
   careerStageResults: CareerStageResult[];
   soloLevelResults: SoloLevelResult[];
-  difficultyResults: DifficultyResult[]; // Added this line
+  difficultyResults: DifficultyResult[];
   detailedAnswers: DetailedAnswer[];
+  // --- New Fields ---
+  estimatedAbilityScore: number; // Weighted score percentage
+  eligibilityCategory: 'A' | 'B' | 'C';
+  // --- End New Fields ---
 }
 
 export interface RadarChartDataPoint {
@@ -98,3 +102,5 @@ export interface RadarChartDataPoint {
   A: number; // Represents the score
   fullMark: number;
 }
+
+// --- END OF FILE app/types/quiz.ts ---
