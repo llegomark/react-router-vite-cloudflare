@@ -1,7 +1,7 @@
 // FILE: app/components/quiz/QuizCard.tsx
 import React from 'react';
 import { Card, CardContent, CardFooter, CardHeader, CardTitle } from '../../components/ui/card';
-import { Button } from '../../components/ui/button'; // Keep Button for structure if needed, Links handle clicks
+import { Button } from '../../components/ui/button';
 import ProgressBar from './ProgressBar';
 import QuestionCard from './QuestionCard';
 import OptionsList from './OptionsList';
@@ -9,14 +9,15 @@ import type { Question } from '../../types/quiz';
 
 interface QuizCardProps {
   question: Question;
-  currentQuestionIndex: number; // Still useful for ProgressBar
+  currentQuestionIndex: number;
   totalQuestions: number;
   selectedAnswer?: string;
   onAnswer: (questionId: number, answer: string) => void;
-  // Removed onNext, onPrev
+  onNextClick: () => void; // New callback for next/finish
+  onPrevClick: () => void; // New callback for previous
   isLastQuestion: boolean;
-  NextLinkComponent: React.ReactNode; // Accept Link/Button as Node
-  PrevLinkComponent: React.ReactNode; // Accept Link/Button as Node
+  canGoNext: boolean; // Flag to enable/disable next/finish button
+  canGoPrev: boolean; // Flag to enable/disable previous button
 }
 
 const QuizCard: React.FC<QuizCardProps> = ({
@@ -25,9 +26,11 @@ const QuizCard: React.FC<QuizCardProps> = ({
   totalQuestions,
   selectedAnswer,
   onAnswer,
-  isLastQuestion, // Keep for button text logic if needed within Link
-  NextLinkComponent,
-  PrevLinkComponent,
+  onNextClick,
+  onPrevClick,
+  isLastQuestion,
+  canGoNext,
+  canGoPrev,
 }) => {
   return (
     <Card className="w-full max-w-3xl mx-auto shadow-lg">
@@ -41,14 +44,25 @@ const QuizCard: React.FC<QuizCardProps> = ({
           options={question.options}
           questionId={question.id}
           selectedAnswer={selectedAnswer}
-          onAnswer={onAnswer} // Pass down the handler
+          onAnswer={onAnswer}
           className="mt-6"
         />
       </CardContent>
       <CardFooter className="flex justify-between border-t pt-6">
-         {/* Render the Link components passed as props */}
-         {PrevLinkComponent}
-         {NextLinkComponent}
+         {/* Use internal buttons calling the callbacks */}
+         <Button
+            variant="outline"
+            onClick={onPrevClick}
+            disabled={!canGoPrev}
+         >
+            Previous
+         </Button>
+         <Button
+            onClick={onNextClick}
+            disabled={!canGoNext} // Disable based on whether an answer is selected
+         >
+            {isLastQuestion ? 'Finish Quiz' : 'Next Question'}
+         </Button>
       </CardFooter>
     </Card>
   );
