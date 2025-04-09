@@ -1,23 +1,29 @@
 // FILE: app/routes/quiz-question.tsx
-import React, { useEffect, useState } from 'react'; // Added useState
-import { useRouteLoaderData, Link } from 'react-router'; // Removed useFetcher
+import React, { useEffect, useState } from 'react';
+import { useRouteLoaderData, Link, useNavigate } from 'react-router';
+import type { MetaFunction } from 'react-router';
 import type { Route } from "./+types/quiz-question";
 import type { Question } from '../types/quiz';
 import QuizCard from '../components/quiz/QuizCard';
-import { getAnswer, saveAnswer } from '../lib/quiz-storage'; // Import saveAnswer
+import { getAnswer, saveAnswer } from '../lib/quiz-storage';
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
 import { Button } from "../components/ui/button";
 
-// Loader remains the same...
-export async function loader({ params }: Route.LoaderArgs) {
+// Define the expected shape of the loader data explicitly
+type QuestionLoaderData = {
+  questionNumber: number;
+  totalQuestions: number;
+};
+
+// Loader function (no changes needed here)
+export async function loader({ params }: Route.LoaderArgs): Promise<QuestionLoaderData> { // Explicit return type
   if (typeof params.questionNumber !== 'string') {
      throw new Response("Invalid question number parameter", { status: 400 });
   }
   const questionNumber = parseInt(params.questionNumber, 10);
 
-  // Dynamically import JSON data
   const allQuestionsData = await import('../data/ppssh-quiz-questions.json');
-  const allQuestions: Question[] = allQuestionsData.default; // Access default export
+  const allQuestions: Question[] = allQuestionsData.default;
 
   if (isNaN(questionNumber) || questionNumber < 1 || questionNumber > allQuestions.length) {
     throw new Response("Question not found", { status: 404 });
@@ -29,21 +35,46 @@ export async function loader({ params }: Route.LoaderArgs) {
    };
 }
 
-// Explicitly type loaderData if auto-generation isn't working
-interface QuizQuestionLoaderData {
-    questionNumber: number;
-    totalQuestions: number;
-}
+// --- Meta Function ---
+// Note: We remove <typeof loader> here as we'll get data from matches
+export const meta: MetaFunction = ({ matches }) => {
+    // Find the match for the current route itself
+    // The last match in the array is typically the deepest/current one
+    const currentRouteMatch = matches[matches.length - 1];
+    // Get the loader data from this route's match, asserting its type
+    const loaderData = currentRouteMatch?.data as QuestionLoaderData | undefined;
 
-// Use the interface or rely on Route.ComponentProps if typegen works
-export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuestionLoaderData }) {
+    // Check if the loader data exists and has the expected properties
+    if (!loaderData || typeof loaderData.questionNumber !== 'number' || typeof loaderData.totalQuestions !== 'number') {
+        // Return default meta if data is missing or invalid
+        return [
+            { title: "PPSSH Quiz Question" },
+            { name: "description", content: "Answer PPSSH NQESH reviewer questions." },
+        ];
+    }
 
-  const { questionNumber, totalQuestions } = loaderData; // Now correctly typed
+    // --- Data is valid, access properties directly ---
+    const { questionNumber, totalQuestions } = loaderData;
 
-  // Type assertion is still okay here, assuming the route ID is correct
+    // Access parent loader data for additional context
+    const parentMatch = matches.find(m => m.id === 'routes/quiz-layout');
+    const questions = (parentMatch?.data as { questions: Question[] } | undefined)?.questions;
+    const currentQuestion = questions?.[questionNumber - 1];
+    const domainName = currentQuestion?.domain?.name ?? 'PPSSH';
+
+    return [
+        { title: `Question ${questionNumber}/${totalQuestions} - PPSSH Quiz` },
+        { name: "description", content: `Answer question ${questionNumber} about the ${domainName} domain for the PPSSH NQESH reviewer.` },
+    ];
+};
+// --- End Meta Function ---
+
+
+// Component remains the same...
+export default function QuizQuestionPage({ loaderData, params }: Route.ComponentProps) {
+  const { questionNumber, totalQuestions } = loaderData;
   const layoutData = useRouteLoaderData('routes/quiz-layout') as { questions: Question[] } | undefined;
 
-  // Better check for layoutData
   if (!layoutData?.questions) {
      return (
         <Alert variant="destructive">
@@ -56,7 +87,6 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
   const allQuestions = layoutData.questions;
   const currentQuestion = allQuestions[questionNumber - 1];
 
-   // Check if currentQuestion exists after indexing
    if (!currentQuestion) {
        return (
            <div className="text-center">
@@ -71,18 +101,20 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
        );
    }
 
-  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined); // Initialize as undefined
+  const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined);
+  const navigate = useNavigate();
 
    useEffect(() => {
-       // Load answer from storage when component mounts or question changes
        if (currentQuestion?.id) {
            setSelectedAnswer(getAnswer(currentQuestion.id));
+       } else {
+           setSelectedAnswer(undefined);
        }
-   }, [currentQuestion?.id]); // Depend on currentQuestion.id
+   }, [currentQuestion?.id]);
 
   const handleAnswerSelect = (questionId: number, answer: string) => {
     setSelectedAnswer(answer);
-    saveAnswer(questionId, answer); // Save directly to localStorage
+    saveAnswer(questionId, answer);
   };
 
   const nextQuestionNumber = questionNumber + 1;
@@ -91,7 +123,7 @@ export default function QuizQuestionPage({ loaderData }: { loaderData: QuizQuest
 
   return (
     <QuizCard
-      key={currentQuestion.id} // Keep the key for resetting state
+      key={currentQuestion.id} // Force remount when question ID changes
       question={currentQuestion}
       currentQuestionIndex={questionNumber - 1}
       totalQuestions={totalQuestions}

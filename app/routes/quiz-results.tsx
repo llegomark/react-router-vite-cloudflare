@@ -1,7 +1,8 @@
 // FILE: app/routes/quiz-results.tsx
 import React, { useState, useCallback, useEffect } from 'react';
-import { useRouteLoaderData, Link } from 'react-router';
-import type { Question, QuizResults, DetailedAnswer, RadarChartDataPoint, DifficultyResult, SoloLevelResult } from '../types/quiz'; // Added DifficultyResult, SoloLevelResult
+import { useRouteLoaderData, Link, useNavigate } from 'react-router';
+import type { MetaFunction } from 'react-router'; // Import MetaFunction
+import type { Question, QuizResults, DetailedAnswer, RadarChartDataPoint, DifficultyResult, SoloLevelResult } from '../types/quiz';
 import ResultsAnalysis from '../components/quiz/ResultsAnalysis';
 import { getAnswers, clearAnswers } from '../lib/quiz-storage';
 import { Alert, AlertDescription, AlertTitle } from "../components/ui/alert";
@@ -9,14 +10,25 @@ import { Button } from "../components/ui/button";
 import { Skeleton } from "../components/ui/skeleton";
 import { Card, CardContent, CardHeader } from "../components/ui/card";
 
+// Server loader is removed
+
+// --- Meta Function ---
+export const meta: MetaFunction = () => {
+  return [
+    { title: "PPSSH Quiz Results" },
+    { name: "description", content: "Review your performance on the PPSSH NQESH reviewer quiz, including domain, strand, and detailed analysis." },
+  ];
+};
+// --- End Meta Function ---
+
 export default function QuizResultsPage() {
 
-  const [results, setResults] = useState<QuizResults | null>(null); // State to hold results
-  const [isLoading, setIsLoading] = useState(true); // Loading state
+  const [results, setResults] = useState<QuizResults | null>(null);
+  const [isLoading, setIsLoading] = useState(true);
+  const navigate = useNavigate(); // Initialize useNavigate
 
-  // Type assertion is okay here, assuming route ID is correct and data loaded
   const layoutData = useRouteLoaderData('routes/quiz-layout') as { questions: Question[] } | undefined;
-  const questions = layoutData?.questions || []; // Default to empty array
+  const questions = layoutData?.questions || [];
 
   const [selectedDomain, setSelectedDomain] = useState<RadarChartDataPoint | null>(null);
   const handleDomainClick = useCallback((domain: RadarChartDataPoint | null) => {
@@ -25,7 +37,7 @@ export default function QuizResultsPage() {
 
   const handleResetQuiz = () => {
     clearAnswers();
-    window.location.href = '/quiz/question/1'; // Consider using navigate() hook if preferred
+    navigate('/quiz/question/1', { replace: true }); // Use navigate instead of window.location
   };
 
   useEffect(() => {
@@ -36,8 +48,8 @@ export default function QuizResultsPage() {
           const domainResults: { [key: number]: { name: string; total: number; correct: number } } = {};
           const strandResults: { [key: string]: { name: string; domainId: number; domainName: string; total: number; correct: number } } = {};
           const careerStageResults: { [key: number]: { total: number; correct: number } } = {};
-          const soloLevelResultsAcc: { [key: string]: { total: number; correct: number } } = {}; // Renamed accumulator
-          const difficultyResultsAcc: { [key: string]: { total: number; correct: number } } = {}; // Accumulator for difficulty
+          const soloLevelResultsAcc: { [key: string]: { total: number; correct: number } } = {};
+          const difficultyResultsAcc: { [key: string]: { total: number; correct: number } } = {};
           let correctCount = 0;
 
           questions.forEach(question => {
@@ -81,7 +93,7 @@ export default function QuizResultsPage() {
               isCorrect: answers[q.id] === q.correctAnswer, explanation: q.explanation,
               domain: q.domain.name, strand: q.strand.name, indicator: q.indicator.text,
               careerStage: q.careerStage, soloLevel: q.soloLevel, contentTags: q.contentTags,
-              difficulty: q.difficultyParams.category // Added difficulty
+              difficulty: q.difficultyParams.category
           }));
 
           // Process difficulty results
@@ -90,9 +102,8 @@ export default function QuizResultsPage() {
               total: data.total,
               correct: data.correct,
               percentage: (data.correct / data.total) * 100 || 0,
-          })).sort((a, b) => { // FIX: Use type assertion here
+          })).sort((a, b) => {
               const order = { 'Easy': 1, 'Medium': 2, 'Difficult': 3 };
-              // Assert that a.category and b.category are keys of 'order'
               return (order[a.category as keyof typeof order] || 99) - (order[b.category as keyof typeof order] || 99);
           });
 
@@ -100,16 +111,15 @@ export default function QuizResultsPage() {
           const finalSoloLevelResults: SoloLevelResult[] = Object.entries(soloLevelResultsAcc).map(([level, data]) => ({
                 level: level, total: data.total, correct: data.correct,
                 percentage: (data.correct / data.total) * 100 || 0,
-            })).sort((a, b) => { // FIX: Use type assertion here
+            })).sort((a, b) => {
                 const order = { 'Unistructural': 1, 'Multistructural': 2, 'Relational': 3, 'Extended Abstract': 4 };
-                // Assert that a.level and b.level are keys of 'order'
                 return (order[a.level as keyof typeof order] || 99) - (order[b.level as keyof typeof order] || 99);
             });
 
 
           const finalResults: QuizResults = {
               totalQuestions: questions.length, correctAnswers: correctCount,
-              overallPercentage: (correctCount / questions.length) * 100 || 0, // Handle division by zero
+              overallPercentage: (correctCount / questions.length) * 100 || 0,
               domainResults: Object.entries(domainResults).map(([id, data]) => ({
                   id: Number(id), name: data.name, total: data.total, correct: data.correct,
                   percentage: (data.correct / data.total) * 100 || 0,
@@ -117,28 +127,25 @@ export default function QuizResultsPage() {
               strandResults: Object.entries(strandResults).map(([id, data]) => ({
                   id: id, name: data.name, domainId: data.domainId, domainName: data.domainName,
                   total: data.total, correct: data.correct, percentage: (data.correct / data.total) * 100 || 0,
-              })).sort((a, b) => a.id.localeCompare(b.id)), // Sort strands for consistency
+              })).sort((a, b) => a.id.localeCompare(b.id)),
               careerStageResults: Object.entries(careerStageResults).map(([stage, data]) => ({
                   stage: Number(stage), total: data.total, correct: data.correct,
                   percentage: (data.correct / data.total) * 100 || 0,
-              })).sort((a, b) => a.stage - b.stage), // Sort stages
-              soloLevelResults: finalSoloLevelResults, // Use the sorted results
-              difficultyResults: finalDifficultyResults, // Use the sorted results
+              })).sort((a, b) => a.stage - b.stage),
+              soloLevelResults: finalSoloLevelResults,
+              difficultyResults: finalDifficultyResults,
               detailedAnswers: detailedAnswers,
           };
-          // --- End Calculation Logic ---
 
           setResults(finalResults);
-          setIsLoading(false); // Mark loading as complete
+          setIsLoading(false);
       } else if (layoutData === undefined) {
-          // Still waiting for layout data
           setIsLoading(true);
       } else {
-          // Questions array is empty, something went wrong
           console.error("Questions data is empty.");
-          setIsLoading(false); // Stop loading, show error state
+          setIsLoading(false);
       }
-  }, [questions, layoutData]); // Rerun when questions data is available
+  }, [questions, layoutData]);
 
   // Render loading state
   if (isLoading) {
@@ -152,14 +159,13 @@ export default function QuizResultsPage() {
                   <CardContent className="pt-4">
                       <Skeleton className="h-3 w-full mb-6" />
                       <Skeleton className="h-40 w-full mt-6" />
-                       {/* Add more skeletons for charts/details if desired */}
                   </CardContent>
               </Card>
           </div>
       );
   }
 
-  // Add a check for results being null or questions empty after loading attempt
+   // Check for results being null or questions empty after loading attempt
    if (!results || questions.length === 0) {
      return (
         <div className="container mx-auto p-4 max-w-lg">
@@ -182,7 +188,7 @@ export default function QuizResultsPage() {
   return (
     <ResultsAnalysis
       results={results}
-      questions={questions} // Pass questions down for detailed view
+      questions={questions}
       onResetQuiz={handleResetQuiz}
       selectedDomain={selectedDomain}
       onDomainClick={handleDomainClick}
