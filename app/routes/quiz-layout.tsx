@@ -1,4 +1,4 @@
-// FILE: app/routes/quiz-layout.tsx
+// FILE: app/quiz-layout.tsx
 import React from 'react';
 // Remove useLoaderData if it's not used directly here
 import { Outlet, useNavigation } from 'react-router';
@@ -29,11 +29,6 @@ export default function QuizLayout() { // NEW - No props needed here directly
 
   return (
     <div className="flex flex-col min-h-screen bg-muted/40">
-      {/* Optional Header for Quiz */}
-      <header className="bg-background border-b sticky top-0 z-10 px-4 py-2 shadow-sm">
-         <h1 className="text-xl font-semibold text-primary text-center">PPSSH NQESH Reviewer</h1>
-      </header>
-
       {/* Main content area */}
       <main className={cn(
             "flex-grow flex justify-center items-start py-10 px-4",

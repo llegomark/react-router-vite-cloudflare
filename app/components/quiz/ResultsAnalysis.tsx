@@ -18,7 +18,7 @@ import type { Question, QuizResults, DomainResult, CareerStageResult, RadarChart
 import { cn } from "../../lib/utils";
 import { Terminal, ChevronLeft, Target, CheckCircle, AlertTriangle, XCircle, Info } from "lucide-react"; // Added more icons
 
-// --- Helper Functions ---
+// --- Helper Functions --- (Keep existing helper functions)
 const getDomainDescription = (domainName: string): string => {
   const descriptions: { [key: string]: string } = {
     "Leading Strategically": "Demonstrates capability in setting direction, establishing goals, and ensuring strategic alignment. Leadership in vision development is effective.",
@@ -156,7 +156,7 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
 
 
   return (
-    <div className="container mx-auto p-4 max-w-7xl space-y-8">
+    <div className="w-full space-y-8">
       {/* --- Overall Performance Card --- */}
        <Card className="shadow-lg border-primary/20">
         <CardHeader className="text-center">
@@ -216,16 +216,20 @@ const ResultsAnalysis: React.FC<ResultsAnalysisProps> = ({
 
       {/* --- Tabs --- */}
       <Tabs defaultValue="overview">
-        {/* Updated Tabs List */}
-        <TabsList className="grid w-full grid-cols-7 mb-6"> {/* Changed grid-cols-6 to grid-cols-7 */}
-          <TabsTrigger value="overview">Overview</TabsTrigger>
-          <TabsTrigger value="domains">Domains & Strands</TabsTrigger>
-          <TabsTrigger value="career-stages">Career Stages</TabsTrigger>
-          <TabsTrigger value="solo">SOLO Levels</TabsTrigger>
-          <TabsTrigger value="difficulty">Difficulty</TabsTrigger>
-          <TabsTrigger value="detailed">Detailed Analysis</TabsTrigger>
-          <TabsTrigger value="eligibility">Eligibility Estimate</TabsTrigger> {/* New Trigger */}
-        </TabsList>
+        {/* --- UPDATED Tabs List for Mobile Friendliness --- */}
+        <div className="w-full overflow-x-auto pb-2 mb-4"> {/* Wrapper for scrolling */}
+            <TabsList className="inline-flex w-max mb-0"> {/* Use inline-flex and w-max, remove grid */}
+              <TabsTrigger value="overview" className="flex-shrink-0">Overview</TabsTrigger> {/* Add flex-shrink-0 */}
+              <TabsTrigger value="domains" className="flex-shrink-0">Domains & Strands</TabsTrigger>
+              <TabsTrigger value="career-stages" className="flex-shrink-0">Career Stages</TabsTrigger>
+              <TabsTrigger value="solo" className="flex-shrink-0">SOLO Levels</TabsTrigger>
+              <TabsTrigger value="difficulty" className="flex-shrink-0">Difficulty</TabsTrigger>
+              <TabsTrigger value="detailed" className="flex-shrink-0">Detailed Analysis</TabsTrigger>
+              <TabsTrigger value="eligibility" className="flex-shrink-0">Eligibility Estimate</TabsTrigger>
+            </TabsList>
+        </div>
+        {/* --- END UPDATED Tabs List --- */}
+
 
         {/* --- Overview Tab --- */}
         <TabsContent value="overview">
