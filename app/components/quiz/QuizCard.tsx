@@ -33,7 +33,7 @@ const QuizCard: React.FC<QuizCardProps> = ({
   canGoPrev,
 }) => {
   return (
-    <Card className="w-full max-w-3xl mx-auto shadow-lg">
+    <Card className="w-full shadow-lg"> {/* Removed max-w and mx-auto */}
        <CardHeader>
           <CardTitle className="text-2xl text-center font-bold text-primary">PPSSH NQESH Reviewer</CardTitle>
           <ProgressBar current={currentQuestionIndex} total={totalQuestions} className="mt-4"/>

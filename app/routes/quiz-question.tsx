@@ -1,4 +1,4 @@
-// FILE: app/routes/quiz-question.tsx
+// FILE: app/quiz-question.tsx
 import React, { useEffect, useState, useCallback } from 'react';
 import { useRouteLoaderData, useNavigate } from 'react-router';
 import type { MetaFunction } from 'react-router';
@@ -69,10 +69,10 @@ export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) {
   const layoutData = useRouteLoaderData('routes/quiz-layout') as { questions: Question[] } | undefined;
   const navigate = useNavigate();
 
-  // --- State --- 
+  // --- State ---
   const [selectedAnswer, setSelectedAnswer] = useState<string | undefined>(undefined);
 
-  // --- Derived Data --- 
+  // --- Derived Data ---
   const allQuestions = layoutData?.questions;
   const currentQuestion = allQuestions?.[questionNumber - 1];
   const nextQuestionNumber = questionNumber + 1;
@@ -80,9 +80,9 @@ export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) {
   const isLastQuestion = questionNumber === totalQuestions;
   const canGoPrev = prevQuestionNumber > 0;
   // Enable next/finish only if an answer is selected for the *current* question
-  const canGoNext = !!selectedAnswer; 
+  const canGoNext = !!selectedAnswer;
 
-  // --- Effects --- 
+  // --- Effects ---
   useEffect(() => {
     // Load saved answer for the current question when the question changes
     if (currentQuestion?.id) {
@@ -92,7 +92,7 @@ export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) {
     }
   }, [currentQuestion?.id]); // Depend only on the question ID
 
-  // --- Callbacks --- 
+  // --- Callbacks ---
   const handleAnswerSelect = useCallback((questionId: number, answer: string) => {
     setSelectedAnswer(answer);
     saveAnswer(questionId, answer);
@@ -124,7 +124,7 @@ export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) {
     navigate(`/quiz/question/${prevQuestionNumber}`);
   }, [navigate, prevQuestionNumber, canGoPrev]);
 
-  // --- Render Logic --- 
+  // --- Render Logic ---
   if (!allQuestions) {
      return (
         <Alert variant="destructive">
@@ -150,18 +150,20 @@ export default function QuizQuestionPage({ loaderData }: Route.ComponentProps) {
    }
 
   return (
-    <QuizCard
-      key={currentQuestion.id} // Force remount/update if needed
-      question={currentQuestion}
-      currentQuestionIndex={questionNumber - 1}
-      totalQuestions={totalQuestions}
-      selectedAnswer={selectedAnswer}
-      onAnswer={handleAnswerSelect}
-      isLastQuestion={isLastQuestion}
-      onNextClick={handleNextClick} // Use callback
-      onPrevClick={handlePrevClick} // Use callback
-      canGoNext={canGoNext}         // Pass disabled state logic
-      canGoPrev={canGoPrev}         // Pass disabled state logic
-    />
+    <div className="w-full max-w-3xl"> {/* Added wrapper div for width control */}
+        <QuizCard
+          key={currentQuestion.id} // Force remount/update if needed
+          question={currentQuestion}
+          currentQuestionIndex={questionNumber - 1}
+          totalQuestions={totalQuestions}
+          selectedAnswer={selectedAnswer}
+          onAnswer={handleAnswerSelect}
+          isLastQuestion={isLastQuestion}
+          onNextClick={handleNextClick} // Use callback
+          onPrevClick={handlePrevClick} // Use callback
+          canGoNext={canGoNext}         // Pass disabled state logic
+          canGoPrev={canGoPrev}         // Pass disabled state logic
+        />
+    </div>
   );
 }

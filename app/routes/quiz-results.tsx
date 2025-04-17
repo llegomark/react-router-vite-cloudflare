@@ -1,6 +1,4 @@
-// --- START OF FILE app/routes/quiz-results.tsx ---
-
-// FILE: app/routes/quiz-results.tsx
+// FILE: app/quiz-results.tsx
 import React, { useState, useCallback, useEffect } from 'react';
 import { useRouteLoaderData, Link, useNavigate } from 'react-router';
 import type { MetaFunction } from 'react-router'; // Import MetaFunction
@@ -264,13 +262,15 @@ export default function QuizResultsPage() {
 
   // Render the analysis component with the full results object
   return (
-    <ResultsAnalysis
-      results={results}
-      questions={questions}
-      onResetQuiz={handleResetQuiz} // Pass the corrected reset handler
-      selectedDomain={selectedDomain}
-      onDomainClick={handleDomainClick}
-    />
+    <div className="w-full max-w-5xl"> {/* Added wrapper div for width control */}
+        <ResultsAnalysis
+          results={results}
+          questions={questions}
+          onResetQuiz={handleResetQuiz} // Pass the corrected reset handler
+          selectedDomain={selectedDomain}
+          onDomainClick={handleDomainClick}
+        />
+    </div>
   );
 }
 // --- END OF FILE app/routes/quiz-results.tsx ---

@@ -1,7 +1,7 @@
 // FILE: app/components/quiz/QuestionCard.tsx
 import React from 'react';
 import { CardContent, CardDescription, CardHeader, CardTitle } from '../../components/ui/card';
-import { Badge } from '../../components/ui/badge';
+// Badge import removed as it's no longer used
 import type { Question } from '../../types/quiz';
 
 interface QuestionCardProps {
@@ -11,6 +11,7 @@ interface QuestionCardProps {
 const QuestionCard: React.FC<QuestionCardProps> = ({ question }) => {
   return (
     <div className="mb-6">
+      {/* --- REMOVED BADGES SECTION ---
        <div className="flex flex-wrap gap-2 mb-3">
           <Badge variant="outline" className="text-xs">
             Domain: {question.domain.name}
@@ -28,8 +29,8 @@ const QuestionCard: React.FC<QuestionCardProps> = ({ question }) => {
             Difficulty: {question.difficultyParams.category}
           </Badge>
         </div>
+      */}
       <p className="text-lg font-medium leading-relaxed">{question.text}</p>
-
     </div>
   );
 };
